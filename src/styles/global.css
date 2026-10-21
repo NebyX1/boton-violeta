@@ -1,0 +1,241 @@
+@import 'tailwindcss';
+
+/* Dark mode acotado al marco del teléfono simulado (como en el prototipo). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand: #7746d8;
+  --color-brand-dark: #6032ba;
+  --color-brand-soft: #eee6fa;
+  --color-brand-ring: #bba0ef;
+
+  --color-ink: #2a203b;
+  --color-muted: #92849f;
+  --color-line: #eae3f1;
+  --color-canvas: #f9f7fc;
+  --color-paper: #ffffff;
+  --color-page: #f3f0f6;
+
+  --color-green: #438773;
+  --color-green-soft: #e9f4ee;
+  --color-red: #d45d81;
+  --color-red-soft: #fff0f5;
+  --color-amber: #99712d;
+  --color-amber-soft: #fff3dc;
+
+  --color-console: #2e1f41;
+  --color-console-soft: #51366d;
+
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Manrope', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --animate-appear: appear 0.18s ease-out;
+  --animate-sheetin: sheetin 0.2s ease-out;
+  --animate-pulse-live: pulse 3s infinite;
+
+  @keyframes appear {
+    from {
+      opacity: 0.35;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes sheetin {
+    from {
+      opacity: 0.2;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes pulse {
+    50% {
+      opacity: 0.5;
+    }
+  }
+}
+
+/* Tema oscuro del simulador: reasigna los tokens dentro del scope `.dark`. */
+.dark {
+  --color-paper: #30263f;
+  --color-canvas: #241c30;
+  --color-ink: #f2e9fb;
+  --color-muted: #b4a0c6;
+  --color-line: #4b375c;
+  --color-brand: #bd9af4;
+  --color-brand-dark: #a37bdd;
+  --color-brand-soft: #48305f;
+  --color-green: #8bc9ac;
+  --color-green-soft: #294438;
+  --color-red: #f29bb8;
+  --color-red-soft: #513044;
+  --color-amber: #e0b877;
+  --color-amber-soft: #4a3a22;
+}
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-ink);
+    background: var(--color-page);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    line-height: 1.22;
+    margin: 0;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  button:focus-visible,
+  a:focus-visible {
+    outline: 3px solid var(--color-brand-ring);
+    outline-offset: 3px;
+  }
+
+  input,
+  textarea,
+  select {
+    font: inherit;
+    width: 100%;
+    min-width: 0;
+    padding: 13px 14px;
+    background: var(--color-paper);
+    border: 1px solid var(--color-line);
+    border-radius: 13px;
+    color: var(--color-ink);
+    outline: 0;
+    font-size: 12px;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: #b091e6;
+    box-shadow: 0 0 0 3px #a284e518;
+  }
+
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-brand);
+    flex: none;
+    margin: 1px 0 0;
+  }
+
+  a {
+    color: var(--color-brand);
+  }
+}
+
+@layer components {
+  /* Utilidades de apoyo del prototipo web (no se portan a React Native). */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Contraste reforzado de accesibilidad. */
+  .contrast {
+    --color-muted: #675077;
+    --color-line: #bea6d0;
+  }
+  .dark.contrast {
+    --color-muted: #d8c4e6;
+    --color-line: #9579a9;
+  }
+
+  /* Movimiento reducido (preferencia del sistema o ajuste manual). */
+  .reduced *,
+  .reduced *::before,
+  .reduced *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+
+  .map-credit-blur {
+    background: #ffffffc4;
+  }
+
+  .sheet-shadow {
+    box-shadow: 0 -12px 40px #2b143f22;
+  }
+
+  .phone-shadow {
+    box-shadow:
+      0 0 0 1px #ded4e7,
+      0 28px 70px #472c6c18,
+      0 6px 15px #472c6c09;
+  }
+
+  .sos-button-gradient {
+    background: linear-gradient(145deg, #9766e8, #7d49d3 50%, #6834bc);
+  }
+
+  .sos-card-gradient {
+    background: linear-gradient(145deg, #f2eafa, #f3ebfc 42%, #e9dff7);
+  }
+
+  .dark .sos-card-gradient {
+    background: linear-gradient(145deg, #462e5e, #3c2852);
+    border-color: #674481;
+  }
+
+  .tile-shadow {
+    box-shadow: 0 4px 10px #39224802;
+  }
+
+  .brand-shadow {
+    box-shadow: 0 5px 14px #7746d81a;
+  }
+}
