@@ -62,13 +62,14 @@ export function StatCard({
   label: string;
   sub: string;
   icon: string;
-  tone?: 'brand' | 'green' | 'red' | 'gray';
+  tone?: 'brand' | 'green' | 'red' | 'gray' | 'amber';
 }) {
   const tones = {
     brand: 'bg-brand-soft text-brand',
     green: 'bg-green-soft text-green',
     red: 'bg-red-soft text-red',
     gray: 'bg-[#f0ecf5] text-[#9686a4]',
+    amber: 'bg-[#fdf3e9] text-[#b07a35]',
   };
   return (
     <div className="flex items-center justify-between gap-[10px] px-5 py-[18px] bg-white border border-[#e7ddee] rounded-[17px]">

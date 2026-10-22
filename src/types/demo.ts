@@ -30,6 +30,7 @@ export type ScreenName =
   | 'chat'
   | 'onboarding'
   | 'roles'
+  | 'lockscreen'
   | 'login'
   | 'register'
   | 'call'
@@ -77,6 +78,49 @@ export interface Contact {
   alerts: boolean;
 }
 
+/**
+ * Perfil concreto que se puede encarnar en la demo.
+ * Cada perfil representa un dispositivo distinto de la misma red.
+ */
+export interface UserProfile {
+  id: string;
+  name: string;
+  role: Extract<Role, 'self' | 'guardian' | 'community'>;
+  label: string;
+  relation: string;
+  city: string;
+  color: ContactColor;
+  /** Dispositivo vinculado a la red de alertas. */
+  linked: boolean;
+  /** Autorizado como vigilante comunitario. */
+  authorized?: boolean;
+  /** Postulación que originó este perfil, si vino del registro. */
+  applicationId?: string;
+  note: string;
+}
+
+export type GuardianApplicationStatus = 'pending' | 'review' | 'approved' | 'rejected';
+
+/** Postulación al registro de vigilantes comunitarios autorizados. */
+export interface GuardianApplication {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  neighborhood: string;
+  availability: string;
+  motivation: string;
+  references: boolean;
+  training: boolean;
+  identity: boolean;
+  status: GuardianApplicationStatus;
+  /** Puntaje de criterios de prueba (0 a 100). */
+  score: number;
+  created: number;
+  reviewed: number | null;
+  notes: string;
+}
+
 export interface IncidentEvent {
   time: number;
   text: string;
@@ -85,6 +129,8 @@ export interface IncidentEvent {
 export interface Incident {
   id: string;
   owner: 'self' | 'seed';
+  /** Perfil/dispositivo que activó la alerta. */
+  ownerProfileId?: string;
   name: string;
   title: string;
   type: string;
@@ -272,12 +318,21 @@ export interface DemoState {
     | 'incidents'
     | 'reports'
     | 'people'
+    | 'guardians'
     | 'resources'
     | 'audit'
     | 'config';
   selectedIncident: string | null;
   queueFilter: 'open' | 'new' | 'all';
   queueSearch: string;
+  /* Perfiles, visibilidad y pantalla bloqueada */
+  profiles: UserProfile[];
+  activeProfileId: string;
+  alertVisibility: 'circle' | 'community';
+  lockButton: boolean;
+  /* Registro de vigilantes comunitarios (web independiente) */
+  guardianApps: GuardianApplication[];
+  guardianFilter: 'all' | GuardianApplicationStatus;
   units: Unit[];
   logs: LogEntry[];
   config: DemoConfig;

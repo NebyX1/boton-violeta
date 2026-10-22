@@ -42,15 +42,17 @@ src/
 │   ├── console/                 # Consola: ConsoleRail, ConsoleLayout, paneles, tablas
 │   └── dialogs/                 # Sheets/diálogos por dominio + DialogHost
 ├── screens/
-│   ├── mobile/                  # 1 archivo por pantalla (Home, Near, Circle, Share, Sos…)
-│   └── console/                 # Pantallas institucionales (Dashboard, Incidents…)
+│   ├── mobile/                  # 1 archivo por pantalla (Home, Near, Circle, Share, Sos,
+│   │                            #   RoleSelection, LockScreen…)
+│   └── console/                 # Pantallas institucionales (Dashboard, Incidents, Guardians…)
+├── pages/GuardianRegistryPage.tsx  # Web independiente de registro de vigilantes
 ├── providers/
 │   ├── DemoStateProvider.tsx    # Contexto + reloj de simulación + toast transitorio
 │   ├── demoReducer.ts           # Toda la lógica de interacción (equivalente a act())
-│   └── demoSelectors.ts         # Selectores puros (liveAlert, followAllowed, nearAlerts…)
-├── services/demoData.ts         # Estado inicial y datos semilla ficticios
+│   └── demoSelectors.ts         # Selectores puros (ownAlert, watchedAlert, nearAlerts…)
+├── services/demoData.ts         # Estado inicial, perfiles y datos semilla ficticios
 ├── services/qrCodes.ts          # QR de demostración por token
-├── lib/                         # format (tiempos/CSV), geo (proyección), cn, iconPaths
+├── lib/                         # format, geo, cn, iconPaths, routes (registro)
 ├── styles/global.css            # Tailwind + tokens de tema + estilos base
 └── types/demo.ts                # Modelos de datos de la demo
 ```
@@ -100,16 +102,40 @@ Cada pantalla y componente contiene sus cadenas literales. Para localizar:
 
 ## Alcance de la demo
 
-- 4 perspectivas conectadas: **Mi app (Camila)**, **Círculo (Elena)**, **Comunidad (Nicolás)** y
-  **Central (Mariana)**.
+- **9 perfiles/dispositivos** seleccionables desde el inicio (y en cualquier momento): 3 personas,
+  3 vigilantes del círculo familiar y 3 vigilantes comunitarios. Todos pueden pedir ayuda con SOS.
+  Cada perfil representa un dispositivo vinculado a la misma red.
+- **Visibilidad del SOS configurable**: solo el círculo, o círculo + personas cercanas. La decisión se
+  toma en Privacidad o en Ajustes y se puede cambiar al activar la alerta.
+- **Alertas entre dispositivos**: un SOS activado se ve en los dispositivos vinculados según la
+  audiencia elegida (círculo, comunidad) y el radio configurado. En la cuenta del círculo familiar, el
+  SOS aparece como **alerta roja principal**, con ubicación, estado de la central, confirmación de
+  recepción, aviso de estar presente y llamada directa al 911.
+- **Pantalla bloqueada de ejemplo**: botón de SOS que aparece al encender la pantalla (si la opción
+  está activa, por defecto sí) y exige mantener pulsado **5 segundos fijos** para activarse, sin
+  abrir la app. Se abre desde el quinto acceso **Bloqueado** de la barra superior o desde Mi cuenta.
+- **Registro de vigilantes comunitarios** (web independiente en `/registro-vigilantes`): formulario
+  de postulación, criterios de prueba con puntaje y revisión con alta, revisión o rechazo. Un alta
+  aprobada se convierte en un dispositivo comunitario disponible en la app y en la consola.
+- 4 perspectivas conectadas: **Mi app**, **Círculo familiar**, **Comunidad** y **Central (Mariana)**.
 - SOS con cuenta regresiva, audiencia configurable y consentimiento explícito para difusión
   comunitaria.
 - Consentimiento por vínculo: vincular no comparte ubicación; cada permiso es individual y revocable.
 - Acompañamiento temporal con duración, revocación y vencimiento automático.
 - Estados sin conexión (`Pendiente de envío` → `Recibida` al reconectar).
 - Reportes no urgentes en 3 pasos con comprobante exportable.
-- Consola institucional: bandeja, detalle operativo, asignación de recursos, bitácora y exportación.
+- Consola institucional: bandeja, detalle operativo, asignación de recursos, bitácora, vigilantes y
+  exportación.
 - Mapa vectorial ilustrativo offline + cartografía real opcional (Leaflet/OpenStreetMap).
+
+## Web independiente de registro
+
+El registro de vigilantes se sirve como una página aparte con su propio layout:
+
+- Ruta: `http://localhost:5173/registro-vigilantes`.
+- Se llega desde la app (selección de perfil o Mi cuenta) sin perder el estado de la demo.
+- Comparte el mismo `DemoStateProvider`, por lo que una postulación enviada aparece en la consola
+  institucional (**Vigilantes**) y un alta aprobada se suma a los perfiles disponibles.
 
 ## Créditos y referencias
 

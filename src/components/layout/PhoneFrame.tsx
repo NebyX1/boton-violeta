@@ -30,7 +30,7 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
       <StatusBar device={device} online={online} />
       <DemoBar onClick={() => dispatch({ type: 'demoTools' })} />
       <div className="flex-1 overflow-auto no-scrollbar overscroll-contain">{children}</div>
-      {screen !== 'onboarding' && screen !== 'roles' && (
+      {screen !== 'onboarding' && screen !== 'roles' && screen !== 'lockscreen' && (
         <BottomTabBar
           role={role}
           screen={screen}

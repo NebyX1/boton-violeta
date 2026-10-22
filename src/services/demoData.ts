@@ -2,10 +2,193 @@ import { BASE_POS } from '@/lib/geo';
 import type {
   Contact,
   DemoState,
+  GuardianApplication,
   Incident,
   LatLng,
   NotificationItem,
+  UserProfile,
 } from '@/types/demo';
+
+/**
+ * Perfiles disponibles en la demo. Cada uno simula un dispositivo distinto
+ * vinculado a la misma red de cuidado.
+ */
+export const seedProfiles: UserProfile[] = [
+  {
+    id: 'camila',
+    name: 'Camila Ríos',
+    role: 'self',
+    label: 'Persona',
+    relation: 'Cuenta propia',
+    city: 'Minas, Lavalleja',
+    color: 'peach',
+    linked: true,
+    note: 'Pide ayuda, administra su círculo y decide quién ve su ubicación.',
+  },
+  {
+    id: 'lucia',
+    name: 'Lucía Ferreira',
+    role: 'self',
+    label: 'Persona',
+    relation: 'Cuenta propia',
+    city: 'Minas, Lavalleja',
+    color: 'pink',
+    linked: true,
+    note: 'Usa Botón Violeta desde el celular y comparte solo con su círculo.',
+  },
+  {
+    id: 'rocio',
+    name: 'Rocío Pérez',
+    role: 'self',
+    label: 'Persona',
+    relation: 'Cuenta propia',
+    city: 'Villa Serrana, Lavalleja',
+    color: 'mint',
+    linked: true,
+    note: 'Vive zona rural; prueba el SOS sin señal y la alerta comunitaria.',
+  },
+  {
+    id: 'elena',
+    name: 'Elena Ríos',
+    role: 'guardian',
+    label: 'Vigilante del círculo familiar',
+    relation: 'Madre de Camila',
+    city: 'Minas, Lavalleja',
+    color: 'peach',
+    linked: true,
+    note: 'Recibe los SOS de Camila y puede acompañarla solo con su permiso.',
+  },
+  {
+    id: 'martin',
+    name: 'Martín Ríos',
+    role: 'guardian',
+    label: 'Vigilante del círculo familiar',
+    relation: 'Hermano de Camila',
+    city: 'Montevideo',
+    color: 'blue',
+    linked: true,
+    note: 'Sigue una sesión compartida y confirma la recepción de la alerta.',
+  },
+  {
+    id: 'sofi',
+    name: 'Sofía Acosta',
+    role: 'guardian',
+    label: 'Vigilante del círculo familiar',
+    relation: 'Amiga de Camila',
+    city: 'Minas, Lavalleja',
+    color: 'mint',
+    linked: true,
+    note: 'Amiga de confianza: recibe alertas privadas del círculo.',
+  },
+  {
+    id: 'nicolas',
+    name: 'Nicolás Pérez',
+    role: 'community',
+    label: 'Vigilante de la comunidad',
+    relation: 'Vecino · Centro',
+    city: 'Minas, Lavalleja',
+    color: 'blue',
+    linked: true,
+    authorized: true,
+    note: 'Vigilante autorizado: ve pedidos SOS cercanos y ofrece apoyo.',
+  },
+  {
+    id: 'micaela',
+    name: 'Micaela Sosa',
+    role: 'community',
+    label: 'Vigilante de la comunidad',
+    relation: 'Vecina · La Coronilla',
+    city: 'Minas, Lavalleja',
+    color: 'pink',
+    linked: true,
+    authorized: true,
+    note: 'Vigilante autorizada con formación básica en primeros auxilios.',
+  },
+  {
+    id: 'diego',
+    name: 'Diego Cabrera',
+    role: 'community',
+    label: 'Vigilante de la comunidad',
+    relation: 'Vecino · Villa Serrana',
+    city: 'Villa Serrana, Lavalleja',
+    color: 'mint',
+    linked: true,
+    authorized: true,
+    note: 'Vigilante autorizado en zona rural, sin cobertura permanente.',
+  },
+];
+
+/** Postulaciones de ejemplo al registro de vigilantes comunitarios. */
+export const seedGuardianApps: GuardianApplication[] = [
+  {
+    id: 'GA-118',
+    name: 'Valeria Núñez',
+    phone: '099 111 222',
+    email: 'valeria@ejemplo.invalid',
+    neighborhood: 'Centro',
+    availability: 'Mañanas y fines de semana',
+    motivation: 'Quiero acompañar a vecinas en el regreso a casa.',
+    references: true,
+    training: true,
+    identity: true,
+    status: 'pending',
+    score: 100,
+    created: Date.now() - 1000 * 60 * 60 * 26,
+    reviewed: null,
+    notes: '',
+  },
+  {
+    id: 'GA-117',
+    name: 'Rodrigo Bentancor',
+    phone: '098 333 444',
+    email: 'rodrigo@ejemplo.invalid',
+    neighborhood: 'La Coronilla',
+    availability: 'Noches',
+    motivation: 'Tengo disponibilidad nocturna y movilidad propia.',
+    references: true,
+    training: false,
+    identity: true,
+    status: 'review',
+    score: 80,
+    created: Date.now() - 1000 * 60 * 60 * 52,
+    reviewed: null,
+    notes: 'Falta acreditar la formación básica.',
+  },
+  {
+    id: 'GA-116',
+    name: 'Ana Laura Méndez',
+    phone: '091 555 666',
+    email: 'analaura@ejemplo.invalid',
+    neighborhood: 'Villa Serrana',
+    availability: 'Fines de semana',
+    motivation: 'Soy docente y conozco a muchas familias de la zona.',
+    references: true,
+    training: true,
+    identity: false,
+    status: 'review',
+    score: 80,
+    created: Date.now() - 1000 * 60 * 60 * 80,
+    reviewed: null,
+    notes: 'Documento ilegible en la postulación de prueba.',
+  },
+];
+
+/** Criterios de prueba usados por el registro (a definir en la versión final). */
+export const guardianCriteria = [
+  { key: 'identity', label: 'Identidad verificada', points: 20 },
+  { key: 'references', label: 'Dos referencias vecinales', points: 20 },
+  { key: 'training', label: 'Formación básica realizada', points: 20 },
+] as const;
+
+/** Puntaje de prueba: base por completar el formulario + criterios. */
+export function guardianScore(app: Pick<GuardianApplication, 'identity' | 'references' | 'training'>) {
+  return (
+    40 +
+    (app.identity ? 20 : 0) +
+    (app.references ? 20 : 0) +
+    (app.training ? 20 : 0)
+  );
+}
 
 /** Puntos de apoyo ficticios (no representan locales reales adheridos). */
 export const places = [
@@ -178,6 +361,12 @@ export function createInitialState(): DemoState {
     selectedIncident: 'BV-2402',
     queueFilter: 'open',
     queueSearch: '',
+    profiles: seedProfiles.map((p) => ({ ...p })),
+    activeProfileId: 'camila',
+    alertVisibility: 'circle',
+    lockButton: true,
+    guardianApps: seedGuardianApps.map((a) => ({ ...a })),
+    guardianFilter: 'all',
     units: [
       { id: 'V-01', name: 'Unidad V-01', type: 'Móvil de prueba', available: true },
       { id: 'V-02', name: 'Unidad V-02', type: 'Móvil de prueba', available: false },

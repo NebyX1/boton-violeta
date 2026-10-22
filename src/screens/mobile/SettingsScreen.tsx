@@ -62,6 +62,21 @@ export function SettingsScreen() {
         ))}
       </div>
 
+      <span className="block mt-[19px] mb-2 text-[12px] font-bold">Privacidad del SOS</span>
+      <Segmented
+        value={state.alertVisibility}
+        onChange={(value) => dispatch({ type: 'setAlertVisibility', value })}
+        options={[
+          { value: 'circle', label: 'Solo mi círculo' },
+          { value: 'community', label: 'Mi círculo + comunidad' },
+        ]}
+      />
+      <p className="mt-2 text-[9px] leading-relaxed text-muted">
+        {state.alertVisibility === 'circle'
+          ? 'Cuando pidas ayuda, solo tus contactos de confianza y la central verán la alerta.'
+          : 'Cuando pidas ayuda, los dispositivos comunitarios dentro del radio también verán el pedido.'}
+      </p>
+
       <span className="block mt-[19px] mb-2 text-[12px] font-bold">Interfaz de dispositivo</span>
       <Segmented
         value={state.device}

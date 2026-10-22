@@ -1,5 +1,5 @@
 import { useDemo } from '@/providers/DemoStateProvider';
-import { nearAlerts } from '@/providers/demoSelectors';
+import { nearAlerts, activeProfile } from '@/providers/demoSelectors';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { Screen } from '@/components/layout/PhoneFrame';
 import { Badge } from '@/components/common/Badge';
@@ -17,10 +17,11 @@ import { SosCard } from '@/components/sos/SosCard';
 export function CommunityHomeScreen() {
   const { state, dispatch } = useDemo();
   const alerts = nearAlerts(state);
+  const me = activeProfile(state)?.name ?? 'Nicolás Pérez';
 
   return (
     <Screen>
-      <AppHeader name="Nicolás" sub="La ayuda empieza cerca" />
+      <AppHeader name={me.split(' ')[0]} sub="La ayuda empieza cerca" />
       <Badge color="green">
         <Icon name="radar" size="sm" /> PERSPECTIVA DE COMUNIDAD
       </Badge>

@@ -1,4 +1,6 @@
 import { useDemo } from '@/providers/DemoStateProvider';
+import { activeProfile } from '@/providers/demoSelectors';
+import { navigateTo, REGISTRY_PATH } from '@/lib/routes';
 import { Screen } from '@/components/layout/PhoneFrame';
 import { PageTop } from '@/components/layout/PageTop';
 import { Avatar } from '@/components/common/Avatar';
@@ -9,12 +11,8 @@ import { MenuRow } from '@/components/common/Tile';
 /** Mi cuenta: menú de la cuenta propia o de las perspectivas asociadas. */
 export function ProfileScreen() {
   const { state, dispatch } = useDemo();
-  const name =
-    state.role === 'guardian'
-      ? 'Elena Ríos'
-      : state.role === 'community'
-        ? 'Nicolás Pérez'
-        : state.profile.name;
+  const profile = activeProfile(state);
+  const name = profile?.name ?? state.profile.name;
   const own = state.role === 'self';
 
   return (
@@ -35,9 +33,10 @@ export function ProfileScreen() {
         <Avatar name={name} color={state.role === 'guardian' ? 'peach' : ''} size="lg" />
         <div>
           <h2>{name}</h2>
-          <p className="text-[12px] text-muted mt-2">Minas, Lavalleja</p>
-          <div className="mt-2">
+          <p className="text-[12px] text-muted mt-2">{profile?.relation ?? 'Minas, Lavalleja'}</p>
+          <div className="mt-2 flex flex-wrap gap-1">
             <Badge color="gray">CUENTA DE PRUEBA</Badge>
+            {profile && <Badge>{profile.label.toUpperCase()}</Badge>}
           </div>
         </div>
       </div>
@@ -124,10 +123,22 @@ export function ProfileScreen() {
 
       <div className="px-4 mt-4 border border-line rounded-[19px] bg-paper">
         <MenuRow
+          icon="lock"
+          title="Pantalla bloqueada y SOS"
+          sub={state.lockButton ? 'Botón activo al encender la pantalla' : 'Botón desactivado'}
+          onClick={() => dispatch({ type: 'go', screen: 'lockscreen' })}
+        />
+        <MenuRow
           icon="users"
           title="Cambiar perfil"
           sub="Persona · círculo familiar · comunidad"
           onClick={() => dispatch({ type: 'go', screen: 'roles' })}
+        />
+        <MenuRow
+          icon="shield"
+          title="Registro de vigilantes"
+          sub="Web independiente de altas comunitarias"
+          onClick={() => navigateTo(REGISTRY_PATH)}
         />
         <MenuRow
           icon="help"

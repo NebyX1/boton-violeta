@@ -1,5 +1,5 @@
 import { useDemo } from '@/providers/DemoStateProvider';
-import { liveAlert } from '@/providers/demoSelectors';
+import { ownAlert } from '@/providers/demoSelectors';
 import { incidentStatusLabel } from '@/services/demoData';
 import { Screen } from '@/components/layout/PhoneFrame';
 import { PageTop } from '@/components/layout/PageTop';
@@ -19,7 +19,7 @@ import { MapLabel, VectorMap } from '@/components/map/VectorMap';
  */
 export function SosScreen() {
   const { state, dispatch } = useDemo();
-  const a = liveAlert(state);
+  const a = ownAlert(state);
 
   if (!a) {
     return (
@@ -115,10 +115,10 @@ export function SosScreen() {
           <Icon name={a.operator ? 'check2' : 'clock'} className={a.operator ? 'text-green' : 'text-muted'} />
         </div>
         {a.familyAck && (
-          <p className="text-[10px] text-green mt-3">Elena confirmó que vio tu alerta.</p>
+          <p className="text-[10px] text-green mt-3">Tu círculo confirmó que vio tu alerta.</p>
         )}
         {a.familyPresent && (
-          <p className="text-[10px] text-green mt-2">Elena informó que está contigo.</p>
+          <p className="text-[10px] text-green mt-2">Alguien de tu círculo está contigo.</p>
         )}
       </Tile>
 

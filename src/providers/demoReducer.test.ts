@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { demoReducer } from '@/providers/demoReducer';
-import { liveAlert, nearAlerts, nearbyFeed, received } from '@/providers/demoSelectors';
+import {
+  liveAlert,
+  nearAlerts,
+  nearbyFeed,
+  ownAlert,
+  received,
+  watchedAlert,
+} from '@/providers/demoSelectors';
 import { createInitialState } from '@/services/demoData';
 import type { DemoState } from '@/types/demo';
 
@@ -122,9 +129,112 @@ describe('demoReducer', () => {
       helpType: 'Acompañamiento desde un lugar seguro',
     });
     const a = s.incidents.find((x) => x.id === 'BV-2402');
-    expect(a!.helpers).toContain('Camila');
+    expect(a!.helpers).toContain('Camila Ríos');
     s = demoReducer(s, { type: 'withdrawHelp', id: 'BV-2402' });
-    expect(s.incidents.find((x) => x.id === 'BV-2402')!.helpers).not.toContain('Camila');
+    expect(s.incidents.find((x) => x.id === 'BV-2402')!.helpers).not.toContain('Camila Ríos');
+  });
+
+  it('los perfiles cambian el dispositivo activo y el nombre del SOS', () => {
+    let s = start();
+    expect(s.profiles.length).toBeGreaterThanOrEqual(9);
+
+    s = demoReducer(s, { type: 'selectProfile', id: 'micaela' });
+    expect(s.role).toBe('community');
+    expect(s.activeProfileId).toBe('micaela');
+    expect(s.screen).toBe('home');
+
+    s = demoReducer(s, { type: 'startCountdown', publicConsent: true });
+    for (let i = 0; i < 3; i++) s = demoReducer(s, { type: 'countdownTick' });
+    expect(liveAlert(s)?.name).toBe('Micaela Sosa');
+    s = demoReducer(s, { type: 'stopSos', reason: 'Prueba' });
+  });
+
+  it('la visibilidad elegida decide si el SOS es comunitario o solo del círculo', () => {
+    let s = start();
+    expect(s.alertVisibility).toBe('circle');
+    s = demoReducer(s, { type: 'startCountdown', publicConsent: false });
+    for (let i = 0; i < 3; i++) s = demoReducer(s, { type: 'countdownTick' });
+    expect(liveAlert(s)!.public).toBe(false);
+    s = demoReducer(s, { type: 'stopSos', reason: 'Prueba' });
+
+    s = demoReducer(s, { type: 'setAlertVisibility', value: 'community' });
+    expect(s.audience.public).toBe(true);
+    s = demoReducer(s, { type: 'startCountdown', publicConsent: true });
+    for (let i = 0; i < 3; i++) s = demoReducer(s, { type: 'countdownTick' });
+    expect(liveAlert(s)!.public).toBe(true);
+  });
+
+  it('el SOS de pantalla bloqueada exige la opción activada', () => {
+    let s = start();
+    expect(s.lockButton).toBe(true);
+
+    s = demoReducer(s, { type: 'toggleLockButton' });
+    expect(s.lockButton).toBe(false);
+    s = demoReducer(s, { type: 'sosFromLock' });
+    expect(liveAlert(s)).toBeNull();
+
+    s = demoReducer(s, { type: 'toggleLockButton' });
+    s = demoReducer(s, { type: 'sosFromLock' });
+    const a = liveAlert(s);
+    expect(a).not.toBeNull();
+    expect(a!.events.some((e) => e.text.includes('5 segundos'))).toBe(true);
+    expect(s.screen).toBe('sos');
+  });
+
+  it('el registro de vigilantes aprueba altas y las vuelve dispositivos disponibles', () => {
+    let s = start();
+    s = demoReducer(s, {
+      type: 'submitGuardianApplication',
+      data: {
+        name: 'Vecina Nueva',
+        phone: '099 777 888',
+        email: 'vecina@ejemplo.invalid',
+        neighborhood: 'Centro',
+        availability: 'Mañanas',
+        motivation: 'Quiero acompañar a otras personas.',
+        references: true,
+        training: true,
+        identity: true,
+      },
+    });
+    const app = s.guardianApps[0];
+    expect(app.score).toBe(100);
+    expect(app.status).toBe('pending');
+
+    s = demoReducer(s, { type: 'reviewGuardianApp', id: app.id, status: 'approved' });
+    const created = s.profiles.find((p) => p.applicationId === app.id);
+    expect(created?.role).toBe('community');
+    expect(created?.authorized).toBe(true);
+
+    s = demoReducer(s, { type: 'reviewGuardianApp', id: app.id, status: 'rejected' });
+    expect(s.guardianApps.find((x) => x.id === app.id)?.status).toBe('rejected');
+  });
+
+  it('los otros dispositivos ven el SOS según el vínculo y la visibilidad', () => {
+    let s = start();
+    s = demoReducer(s, { type: 'startCountdown', publicConsent: false });
+    for (let i = 0; i < 3; i++) s = demoReducer(s, { type: 'countdownTick' });
+    const id = s.alertId!;
+
+    // La alerta privada no aparece en el feed comunitario.
+    s = demoReducer(s, { type: 'selectProfile', id: 'lucia' });
+    expect(ownAlert(s)).toBeNull();
+    expect(nearbyFeed(s).some((a) => a.id === id)).toBe(false);
+
+    // El círculo vinculado sí la ve.
+    s = demoReducer(s, { type: 'selectProfile', id: 'elena' });
+    expect(watchedAlert(s)?.id).toBe(id);
+
+    // Con visibilidad comunitaria, otro dispositivo de la zona también la ve.
+    s = demoReducer(s, { type: 'selectProfile', id: 'camila' });
+    s = demoReducer(s, { type: 'stopSos', reason: 'Prueba' });
+    s = demoReducer(s, { type: 'setAlertVisibility', value: 'community' });
+    s = demoReducer(s, { type: 'startCountdown', publicConsent: true });
+    for (let i = 0; i < 3; i++) s = demoReducer(s, { type: 'countdownTick' });
+    const publicId = s.alertId!;
+    s = demoReducer(s, { type: 'selectProfile', id: 'nicolas' });
+    expect(ownAlert(s)).toBeNull();
+    expect(nearbyFeed(s).some((a) => a.id === publicId)).toBe(true);
   });
 
   it('reiniciar restaura el estado inicial', () => {

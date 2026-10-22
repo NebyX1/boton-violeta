@@ -1,4 +1,7 @@
 import { DemoStateProvider, useDemo } from '@/providers/DemoStateProvider';
+import { useEffect, useState } from 'react';
+import { isRegistryPath } from '@/lib/routes';
+import { GuardianRegistryPage } from '@/pages/GuardianRegistryPage';
 import { StudioLayout } from '@/components/layout/StudioLayout';
 import { PhoneFrame } from '@/components/layout/PhoneFrame';
 import { ConsoleLayout } from '@/components/console/ConsoleLayout';
@@ -6,6 +9,7 @@ import { DashboardScreen } from '@/screens/console/DashboardScreen';
 import { IncidentsScreen } from '@/screens/console/IncidentsScreen';
 import { ReportsScreen as ConsoleReportsScreen } from '@/screens/console/ReportsScreen';
 import { PeopleScreen } from '@/screens/console/PeopleScreen';
+import { GuardiansScreen } from '@/screens/console/GuardiansScreen';
 import { ResourcesScreen } from '@/screens/console/ResourcesScreen';
 import { AuditScreen } from '@/screens/console/AuditScreen';
 import { ConfigScreen } from '@/screens/console/ConfigScreen';
@@ -20,6 +24,7 @@ function ConsoleView() {
     incidents: IncidentsScreen,
     reports: ConsoleReportsScreen,
     people: PeopleScreen,
+    guardians: GuardiansScreen,
     resources: ResourcesScreen,
     audit: AuditScreen,
     config: ConfigScreen,
@@ -60,9 +65,17 @@ function DemoView() {
  * Personas, alertas, ubicaciones y servicios ficticios; no es un canal de emergencia.
  */
 export default function App() {
+  const [registry, setRegistry] = useState(() => isRegistryPath());
+
+  useEffect(() => {
+    const onPop = () => setRegistry(isRegistryPath());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   return (
     <DemoStateProvider>
-      <DemoView />
+      {registry ? <GuardianRegistryPage /> : <DemoView />}
     </DemoStateProvider>
   );
 }

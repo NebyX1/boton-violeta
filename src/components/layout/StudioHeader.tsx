@@ -14,6 +14,7 @@ const roles: Array<{ role: Role; icon: string; label: string }> = [
 /** Selector de perspectiva (las cuatro miradas conectadas de la red). */
 export function RoleSwitcher() {
   const { state, dispatch } = useDemo();
+  const onLock = state.role !== 'operator' && state.screen === 'lockscreen';
   return (
     <div className="flex gap-[3px] p-[5px] bg-[#e9e4f0] rounded-[16px]" aria-label="Cambiar perspectiva">
       {roles.map((r) => (
@@ -23,13 +24,28 @@ export function RoleSwitcher() {
           onClick={() => dispatch({ type: 'setRole', role: r.role })}
           className={cn(
             'flex items-center gap-2 px-[15px] py-[10px] rounded-[12px] text-[11px] font-bold',
-            state.role === r.role ? 'bg-white text-brand shadow-[0_3px_12px_#44266a0a]' : 'text-[#92829e]',
+            state.role === r.role && !onLock
+              ? 'bg-white text-brand shadow-[0_3px_12px_#44266a0a]'
+              : 'text-[#92829e]',
           )}
         >
           <Icon name={r.icon} className="w-[17px] h-[17px]" />
           <span className="hidden sm:inline">{r.label}</span>
         </button>
       ))}
+      <button
+        type="button"
+        onClick={() => dispatch({ type: 'go', screen: 'lockscreen' })}
+        aria-label="Pantalla bloqueada de ejemplo"
+        title="Pantalla bloqueada de ejemplo"
+        className={cn(
+          'flex items-center gap-2 px-[15px] py-[10px] rounded-[12px] text-[11px] font-bold',
+          onLock ? 'bg-white text-brand shadow-[0_3px_12px_#44266a0a]' : 'text-[#92829e]',
+        )}
+      >
+        <Icon name="lock" className="w-[17px] h-[17px]" />
+        <span className="hidden sm:inline">Bloqueado</span>
+      </button>
     </div>
   );
 }

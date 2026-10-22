@@ -1,5 +1,5 @@
 import { useDemo } from '@/providers/DemoStateProvider';
-import { alertContacts, liveAlert, nearbyFeed } from '@/providers/demoSelectors';
+import { alertContacts, activeProfile, nearbyFeed, ownAlert } from '@/providers/demoSelectors';
 import { incidentStatusLabel } from '@/services/demoData';
 
 import { AppHeader } from '@/components/layout/AppHeader';
@@ -18,12 +18,12 @@ import { MapLabel, VectorMap } from '@/components/map/VectorMap';
  */
 export function HomeScreen() {
   const { state, dispatch } = useDemo();
-  const alert = liveAlert(state);
+  const alert = ownAlert(state);
   const shared = state.share.active;
 
   return (
     <Screen>
-      <AppHeader name={state.profile.name.split(' ')[0]} />
+      <AppHeader name={(activeProfile(state)?.name ?? state.profile.name).split(' ')[0]} />
 
       {!state.online && (
         <div className="mb-4">
@@ -76,8 +76,7 @@ export function HomeScreen() {
       <div className="grid grid-cols-2 gap-3 mt-4">
         <button
           type="button"
-          onClick={() => dispatch({ type: 'go', screen: shared ? 'sharelive' : 'share' })}
-          className="flex flex-col items-start gap-3 p-[15px] rounded-[18px] border border-line bg-paper text-left"
+          onClick={() => dispatch({ type: 'go', screen: shared ? 'sharelive' : 'share' })}          className="flex flex-col items-start gap-3 p-[15px] rounded-[18px] border border-line bg-paper text-left"
         >
           <span className="flex items-center justify-center w-[34px] h-[34px] rounded-[11px] bg-brand-soft text-brand">
             <Icon name="walk" size="sm" className="w-[19px] h-[19px]" />
@@ -101,6 +100,25 @@ export function HomeScreen() {
           </div>
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={() => dispatch({ type: 'go', screen: 'lockscreen' })}
+        className="flex items-center gap-[9px] w-full text-left p-3 mt-3 rounded-[17px] border border-line bg-paper"
+      >
+        <span className="flex items-center justify-center w-[34px] h-[34px] rounded-[11px] bg-brand-soft text-brand shrink-0">
+          <Icon name="lock" size="sm" className="w-[19px] h-[19px]" />
+        </span>
+        <span className="flex-1 min-w-0">
+          <strong className="block text-[10px]">Pedir ayuda sin abrir la app</strong>
+          <small className="block text-[8px] text-muted mt-[3px]">
+            {state.lockButton
+              ? 'Botón activo: mantené 5 segundos en la pantalla bloqueada'
+              : 'Probá la pantalla bloqueada y activá el botón de SOS'}
+          </small>
+        </span>
+        <Icon name="chev" size="sm" className="text-muted" />
+      </button>
 
       {nearbyFeed(state).some((a) => a.kind === 'medical') && (
         <button

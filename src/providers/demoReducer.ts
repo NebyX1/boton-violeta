@@ -1,17 +1,21 @@
 import { BASE_POS } from '@/lib/geo';
 import {
   alertContacts,
+  activeProfile,
   helperName,
   incidentById,
-  liveAlert,
+  ownAlert,
   received,
+  watchedAlert,
 } from '@/providers/demoSelectors';
-import { createInitialState, places } from '@/services/demoData';
+import { createInitialState, guardianScore, places } from '@/services/demoData';
 import { qrCodes } from '@/services/qrCodes';
 import type {
   ChatSender,
   ChatTarget,
   DemoState,
+  GuardianApplication,
+  GuardianApplicationStatus,
   Incident,
   NotificationTarget,
   Profile,
@@ -27,6 +31,10 @@ export type DemoAction =
   | { type: 'jump'; screen: ScreenName }
   | { type: 'nav'; screen: ScreenName }
   | { type: 'setRole'; role: Role }
+  | { type: 'selectProfile'; id: string }
+  | { type: 'setAlertVisibility'; value: 'circle' | 'community' }
+  | { type: 'toggleLockButton' }
+  | { type: 'sosFromLock' }
   | { type: 'setDevice'; device: 'ios' | 'android' }
   | { type: 'openSheet'; kind: SheetKind; data?: Record<string, unknown> }
   | { type: 'closeSheet' }
@@ -174,6 +182,23 @@ export type DemoAction =
   | { type: 'createUnit'; name: string; unitType: string }
   | { type: 'toggleConfigCommunity' }
   | { type: 'saveConfig'; radius: number; ack: number; escalate: number }
+  /* Registro de vigilantes comunitarios */
+  | {
+      type: 'submitGuardianApplication';
+      data: {
+        name: string;
+        phone: string;
+        email: string;
+        neighborhood: string;
+        availability: string;
+        motivation: string;
+        references: boolean;
+        training: boolean;
+        identity: boolean;
+      };
+    }
+  | { type: 'reviewGuardianApp'; id: string; status: GuardianApplicationStatus }
+  | { type: 'setGuardianFilter'; filter: 'all' | GuardianApplicationStatus }
   /* Mapa */
   | { type: 'setMapLayer'; layer: 'vector' | 'real' }
   | { type: 'mapZoom'; ctx: string; delta: number }
@@ -232,21 +257,16 @@ function go(s: DemoState, screen: ScreenName, context: string | null = null) {
 }
 
 function activateSOS(s: DemoState, publicOverride: boolean | null = null): Incident | null {
-  const existing = liveAlert(s);
+  const existing = ownAlert(s);
   if (existing) return existing;
   const t = Date.now();
   const id = 'BV-' + (2403 + s.incidents.filter((a) => a.owner === 'self').length);
-  let pub = publicOverride === null ? s.audience.public : publicOverride;
+  let pub = publicOverride === null ? s.alertVisibility === 'community' : publicOverride;
   pub = pub && s.config.community;
   const a: Incident = {
     id,
     owner: 'self',
-    name:
-      s.role === 'guardian'
-        ? 'Elena Ríos'
-        : s.role === 'community'
-          ? 'Nicolás Pérez'
-          : s.profile.name,
+    name: activeProfile(s)?.name ?? s.profile.name,
     title: 'Necesito ayuda',
     type: 'SOS personal',
     kind: 'care',
@@ -257,6 +277,7 @@ function activateSOS(s: DemoState, publicOverride: boolean | null = null): Incid
     family: s.audience.family,
     recipients: alertContacts(s).map((c) => c.id),
     status: s.online ? 'received' : 'queued',
+    ownerProfileId: s.activeProfileId,
     started: t,
     lastPosition: t,
     operator: null,
@@ -294,7 +315,7 @@ function activateSOS(s: DemoState, publicOverride: boolean | null = null): Incid
 }
 
 function stopSOS(s: DemoState) {
-  const a = liveAlert(s);
+  const a = ownAlert(s);
   if (!a) return;
   const t = Date.now();
   a.active = false;
@@ -313,7 +334,6 @@ function stopSOS(s: DemoState) {
     'privacy',
   );
   s.sheet = null;
-  s.role = 'self';
   s.screen = 'ended';
   s.history = [];
 }
@@ -336,7 +356,7 @@ function stopSharing(s: DemoState) {
 
 function toggleNetwork(s: DemoState) {
   s.online = !s.online;
-  const a = liveAlert(s);
+  const a = ownAlert(s);
   if (s.online && a?.status === 'queued') {
     a.status = 'received';
     if (s.permissions.location) {
@@ -450,13 +470,90 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       }
       s.sheet = null;
       return s;
-    case 'setRole':
+    case 'setRole': {
       s.role = action.role;
+      if (action.role !== 'operator') {
+        const p = s.profiles.find((x) => x.role === action.role);
+        if (p) s.activeProfileId = p.id;
+      }
       s.screen = 'home';
       s.context = null;
       s.history = [];
       s.sheet = null;
       return s;
+    }
+    case 'selectProfile': {
+      const p = s.profiles.find((x) => x.id === action.id);
+      if (!p) return s;
+      s.activeProfileId = p.id;
+      s.role = p.role;
+      s.screen = 'home';
+      s.context = null;
+      s.history = [];
+      s.sheet = null;
+      log(s, `Perfil activo: ${p.name} · ${p.label}.`, 'Cuenta');
+      toast(s, `Ahora explorás como ${p.name}.`);
+      return s;
+    }
+    case 'setAlertVisibility': {
+      s.alertVisibility = action.value;
+      s.audience.public = action.value === 'community';
+      if (action.value === 'circle') s.audience.family = true;
+      log(
+        s,
+        action.value === 'community'
+          ? 'Visibilidad del SOS: círculo y personas cercanas.'
+          : 'Visibilidad del SOS: solo el círculo.',
+        'Privacidad',
+      );
+      toast(
+        s,
+        action.value === 'community'
+          ? 'Tu SOS también se mostrará a personas cercanas.'
+          : 'Tu SOS solo se mostrará a tu círculo.',
+      );
+      return s;
+    }
+    case 'toggleLockButton':
+      s.lockButton = !s.lockButton;
+      log(
+        s,
+        `Botón de SOS en pantalla bloqueada ${s.lockButton ? 'activado' : 'desactivado'}.`,
+        'Permiso',
+      );
+      toast(
+        s,
+        s.lockButton
+          ? 'El botón aparecerá al encender la pantalla.'
+          : 'El botón ya no aparecerá en la pantalla bloqueada.',
+      );
+      return s;
+    case 'sosFromLock': {
+      if (s.lockButton === false) {
+        toast(s, 'Activá el botón en pantalla bloqueada para usar este acceso.');
+        return s;
+      }
+      s.audience.family = true;
+      const a = activateSOS(s);
+      if (a) {
+        addEvent(s, a, 'SOS activado desde la pantalla bloqueada tras 5 segundos');
+        notify(
+          s,
+          'SOS activado sin abrir la app',
+          s.alertVisibility === 'community'
+            ? 'Tu círculo y las personas cercanas recibieron la alerta de prueba.'
+            : 'Tu círculo recibió la alerta de prueba.',
+          'radar',
+          'sos',
+        );
+        log(s, 'SOS activado desde la pantalla bloqueada con pulsación de 5 s.', 'Alerta');
+      }
+      s.screen = 'sos';
+      s.history = [];
+      s.sheet = null;
+      toast(s, 'SOS activado desde la pantalla bloqueada.');
+      return s;
+    }
     case 'setDevice':
       s.device = action.device;
       return s;
@@ -476,7 +573,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
 
     /* ---------- SOS ---------- */
     case 'sosOptions':
-      if (liveAlert(s)) {
+      if (ownAlert(s)) {
         openSheet(s, 'already');
       } else {
         openSheet(s, 'sos-options');
@@ -491,6 +588,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
         return s;
       }
       s.audience.public = !s.audience.public;
+      s.alertVisibility = s.audience.public ? 'community' : 'circle';
       return s;
     case 'startCountdown':
       if (s.audience.public && !action.publicConsent) {
@@ -550,13 +648,13 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       openSheet(s, 'stop-sos');
       return s;
     case 'stopSos': {
-      const a = liveAlert(s);
+      const a = ownAlert(s);
       if (a) a.stopReason = action.reason || 'Finalización de prueba';
       stopSOS(s);
       return s;
     }
     case 'togglePublic': {
-      const a = liveAlert(s);
+      const a = ownAlert(s);
       if (!a) return s;
       if (a.public) {
         a.public = false;
@@ -570,7 +668,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       return s;
     }
     case 'confirmPublic': {
-      const a = liveAlert(s);
+      const a = ownAlert(s);
       if (a) {
         a.public = true;
         addEvent(s, a, 'Consentimiento explícito para difusión comunitaria');
@@ -580,7 +678,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       return s;
     }
     case 'cantSpeak': {
-      const a = liveAlert(s);
+      const a = ownAlert(s);
       if (a) {
         a.noTalk = true;
         addEvent(s, a, 'La persona solicita comunicación solo por mensajes');
@@ -634,14 +732,15 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       toast(s, 'Recepción confirmada en la demo.');
       return s;
     case 'familyAck': {
-      const a = liveAlert(s);
-      if (a && a.recipients?.includes('elena')) {
+      const a = watchedAlert(s);
+      const me = helperName(s);
+      if (a) {
         a.familyAck = true;
-        addEvent(s, a, 'Elena confirmó que vio la alerta');
+        addEvent(s, a, `${me} confirmó que vio la alerta`);
         notify(
           s,
-          'Elena vio tu alerta',
-          'Tu familiar confirmó recepción. No implica un despacho policial.',
+          `${me.split(' ')[0]} vio tu alerta`,
+          'Tu círculo confirmó recepción. No implica un despacho policial.',
           'users',
           'sos',
         );
@@ -650,14 +749,15 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       return s;
     }
     case 'familyPresent': {
-      const a = liveAlert(s);
-      if (a && a.recipients?.includes('elena')) {
+      const a = watchedAlert(s);
+      const me = helperName(s);
+      if (a) {
         a.familyPresent = true;
-        addEvent(s, a, 'Elena informó que está con Camila');
+        addEvent(s, a, `${me} informó que está con la persona que pidió ayuda`);
         notify(
           s,
-          'Elena informó que está contigo',
-          'La alerta sigue activa hasta que vos la detengas.',
+          `${me.split(' ')[0]} informó que está contigo`,
+          'La alerta sigue activa hasta que la persona la detenga.',
           'users',
           'sos',
         );
@@ -691,7 +791,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       const c = s.contacts.find((x) => x.id === action.id);
       if (!c) return s;
       c.alerts = !c.alerts;
-      const a = liveAlert(s);
+      const a = ownAlert(s);
       if (a && !c.alerts && a.recipients) {
         a.recipients = a.recipients.filter((id) => id !== c.id);
       }
@@ -724,7 +824,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       s.contacts = s.contacts.filter((x) => x.id !== action.id);
       s.share.recipients = s.share.recipients.filter((id) => id !== action.id);
       if (!s.share.recipients.length) s.share.active = false;
-      const a = liveAlert(s);
+      const a = ownAlert(s);
       if (a && a.recipients) a.recipients = a.recipients.filter((id) => id !== action.id);
       s.shareDraft = null;
       log(s, `Vínculo con ${c?.alias ?? 'contacto'} revocado. Permisos retirados.`, 'Consentimiento');
@@ -1602,6 +1702,81 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       toast(s, 'Configuración aplicada a esta demostración.');
       return s;
 
+    /* ---------- Registro de vigilantes comunitarios ---------- */
+    case 'submitGuardianApplication': {
+      const d = action.data;
+      if (!d.name.trim() || !d.phone.trim() || !d.neighborhood.trim()) {
+        toast(s, 'Completá nombre, teléfono y barrio para postularte.');
+        return s;
+      }
+      const app: GuardianApplication = {
+        id: 'GA-' + (119 + s.guardianApps.length),
+        name: d.name.trim(),
+        phone: d.phone.trim(),
+        email: d.email.trim() || 'sin-correo@ejemplo.invalid',
+        neighborhood: d.neighborhood.trim(),
+        availability: d.availability,
+        motivation: d.motivation,
+        references: d.references,
+        training: d.training,
+        identity: d.identity,
+        status: 'pending',
+        score: guardianScore(d),
+        created: Date.now(),
+        reviewed: null,
+        notes: '',
+      };
+      s.guardianApps.unshift(app);
+      s.guardianFilter = 'all';
+      log(s, `${app.id}: postulación de ${app.name} recibida en el registro.`, 'Registro');
+      toast(s, 'Postulación enviada. Queda pendiente de revisión.');
+      return s;
+    }
+    case 'reviewGuardianApp': {
+      const app = s.guardianApps.find((a) => a.id === action.id);
+      if (!app) return s;
+      app.status = action.status;
+      app.reviewed = Date.now();
+      if (action.status === 'approved') {
+        const exists = s.profiles.some((p) => p.applicationId === app.id);
+        if (!exists) {
+          const id = 'vigilante-' + app.id.toLowerCase();
+          s.profiles.push({
+            id,
+            name: app.name,
+            role: 'community',
+            label: 'Vigilante de la comunidad',
+            relation: `Vecino · ${app.neighborhood}`,
+            city: 'Minas, Lavalleja',
+            color: 'mint',
+            linked: true,
+            authorized: true,
+            applicationId: app.id,
+            note: 'Alta aprobada desde el registro de vigilantes.',
+          });
+          notify(
+            s,
+            'Nuevo vigilante autorizado',
+            `${app.name} ya puede recibir alertas comunitarias como dispositivo vinculado.`,
+            'shield',
+            'activity',
+          );
+        }
+        log(s, `${app.id}: ${app.name} aprobada como vigilante comunitaria.`, 'Registro');
+        toast(s, 'Alta aprobada: el perfil ya está disponible en la app.');
+      } else if (action.status === 'rejected') {
+        log(s, `${app.id}: postulación de ${app.name} rechazada.`, 'Registro');
+        toast(s, 'Postulación rechazada con criterios de prueba.');
+      } else {
+        log(s, `${app.id}: postulación de ${app.name} en revisión.`, 'Registro');
+        toast(s, 'Postulación marcada en revisión.');
+      }
+      return s;
+    }
+    case 'setGuardianFilter':
+      s.guardianFilter = action.filter;
+      return s;
+
     /* ---------- Mapa ---------- */
     case 'setMapLayer':
       s.mapReal = action.layer === 'real';
@@ -1641,7 +1816,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
         toast(s, 'La sesión temporal de seguimiento terminó.');
       }
       /* Movimiento GPS simulado */
-      const a = liveAlert(s);
+      const a = ownAlert(s);
       if (s.motion && s.online && s.permissions.location && (a || s.share.active)) {
         s.motionStep += 1;
         const k = s.motionStep;
@@ -1660,7 +1835,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
         }
       }
       /* Escalamiento simulado si nadie asume el incidente */
-      const live = liveAlert(s);
+      const live = ownAlert(s);
       if (
         live &&
         received(live) &&

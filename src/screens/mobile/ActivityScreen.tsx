@@ -1,9 +1,10 @@
 import { useDemo } from '@/providers/DemoStateProvider';
-import { liveAlert, nearAlerts, received } from '@/providers/demoSelectors';
+import { nearAlerts, watchedAlert } from '@/providers/demoSelectors';
 import { formatTime } from '@/lib/format';
 import { Screen } from '@/components/layout/PhoneFrame';
 import { PageTop } from '@/components/layout/PageTop';
 import { Chip, Chips } from '@/components/common/Segmented';
+import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { IconButton } from '@/components/common/Button';
 import { Icon } from '@/components/common/Icon';
@@ -12,7 +13,7 @@ import { IncidentCard } from '@/components/incidents/IncidentCard';
 /** Actividad: notificaciones, alertas entrantes y reportes en un solo lugar. */
 export function ActivityScreen() {
   const { state, dispatch } = useDemo();
-  const a = liveAlert(state);
+  const watched = watchedAlert(state);
   const list = state.notifications.filter(
     (n) => (n.role ?? 'self') === state.role && (state.activityFilter !== 'unread' || !n.read),
   );
@@ -47,22 +48,33 @@ export function ActivityScreen() {
         )}
       </Chips>
 
-      {state.role === 'guardian' && a && received(a) && a.family && a.recipients?.includes('elena') && (
+      {state.role === 'guardian' && watched && (
         <button
           type="button"
           onClick={() => dispatch({ type: 'go', screen: 'follow' })}
-          className="flex items-start gap-[11px] w-full text-left p-3 mb-3 rounded-[15px] border border-line bg-paper"
+          className="flex items-start gap-[11px] w-full text-left p-3 mb-3 rounded-[16px] border-2 border-[#d52f55] bg-[#ffe4ea] shadow-[0_8px_20px_#d52f5522]"
         >
-          <span className="flex items-center justify-center w-[39px] h-[39px] rounded-[13px] bg-red-soft text-red shrink-0">
+          <span className="flex items-center justify-center w-[39px] h-[39px] rounded-[13px] bg-[#d52f55] text-white shrink-0">
             <Icon name="bell" />
           </span>
           <span className="flex-1 min-w-0">
-            <strong className="block text-[12px]">Camila necesita ayuda</strong>
-            <p className="text-[10px] text-muted mt-1">
+            <span className="flex items-center gap-1 text-[8px] font-extrabold tracking-[0.8px] text-[#b71339]">
+              <i className="h-[5px] w-[5px] rounded-full bg-[#d52f55] animate-pulse-live" />
+              SOS ACTIVO
+            </span>
+            <strong className="mt-[2px] block text-[13px] text-[#8f1836]">
+              {watched.name.split(' ')[0]} necesita ayuda
+            </strong>
+            <p className="text-[10px] text-[#a34a63] mt-1">
               Activó una alerta de prueba. Tenés acceso temporal a su ubicación.
             </p>
-            <time className="block text-[9px] text-muted mt-1">Ahora · demo</time>
+            <span className="mt-1 block text-[9px] font-bold text-[#b71339]">
+              Ver la alerta completa →
+            </span>
           </span>
+          <Badge color="red" live>
+            NUEVA
+          </Badge>
         </button>
       )}
 
@@ -127,7 +139,7 @@ export function ActivityScreen() {
       {!list.length && state.role === 'self' && !state.incoming?.active && (
         <EmptyState title="Todo al día" text="No quedan notificaciones en esta vista." icon="check2" />
       )}
-      {!list.length && state.role === 'guardian' && !a && (
+      {!list.length && state.role === 'guardian' && !watched && (
         <EmptyState
           title="Sin avisos pendientes"
           text="Camila puede avisarte mediante su SOS."

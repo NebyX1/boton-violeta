@@ -1,5 +1,5 @@
 import { useDemo } from '@/providers/DemoStateProvider';
-import { liveAlert } from '@/providers/demoSelectors';
+import { ownAlert } from '@/providers/demoSelectors';
 import { Screen } from '@/components/layout/PhoneFrame';
 import { PageTop } from '@/components/layout/PageTop';
 import { Avatar } from '@/components/common/Avatar';
@@ -21,9 +21,9 @@ export function ShareLiveScreen() {
       <Screen>
         <PageTop title="Acompañamiento" />
         <EmptyState
-          title={liveAlert(state) ? 'Acompañamiento detenido' : 'Tu ubicación vuelve a ser privada'}
+          title={ownAlert(state) ? 'Acompañamiento detenido' : 'Tu ubicación vuelve a ser privada'}
           text={
-            liveAlert(state)
+            ownAlert(state)
               ? 'La sesión voluntaria terminó, pero tu SOS sigue activo con la audiencia que elegiste.'
               : 'No hay una sesión de seguimiento activa.'
           }

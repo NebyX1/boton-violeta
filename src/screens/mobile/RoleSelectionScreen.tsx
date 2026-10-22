@@ -1,75 +1,104 @@
 import { useDemo } from '@/providers/DemoStateProvider';
+import { activeProfile } from '@/providers/demoSelectors';
+import { navigateTo, REGISTRY_PATH } from '@/lib/routes';
 import { Screen } from '@/components/layout/PhoneFrame';
 import { Logo } from '@/components/common/Logo';
+import { Avatar } from '@/components/common/Avatar';
+import { Badge } from '@/components/common/Badge';
+import { Button } from '@/components/common/Button';
 import { Icon } from '@/components/common/Icon';
+import type { Role } from '@/types/demo';
 
-const roles = [
-  {
-    role: 'self',
-    icon: 'mobile',
-    title: 'Persona',
-    subtitle: 'Usar mi app para pedir ayuda y cuidar mi red.',
-    color: 'bg-brand-soft text-brand',
-  },
-  {
-    role: 'guardian',
-    icon: 'users',
-    title: 'Vigilante del círculo familiar',
-    subtitle: 'Acompañar a alguien de mi círculo, siempre con su permiso.',
-    color: 'bg-[#fff0e8] text-[#b65b36]',
-  },
-  {
-    role: 'community',
-    icon: 'radar',
-    title: 'Vigilante de la comunidad',
-    subtitle: 'Ver pedidos SOS cercanos y ofrecer ayuda con cuidado.',
-    color: 'bg-red-soft text-red',
-  },
-] as const;
+const groups: Array<{ role: Extract<Role, 'self' | 'guardian' | 'community'>; title: string; icon: string }> = [
+  { role: 'self', title: 'Personas', icon: 'mobile' },
+  { role: 'guardian', title: 'Vigilantes del círculo familiar', icon: 'users' },
+  { role: 'community', title: 'Vigilantes de la comunidad', icon: 'radar' },
+];
 
-/** Elección del perfil inicial; los tres perfiles conservan acceso al SOS. */
+/**
+ * Elección de perfil/dispositivo.
+ * Todos los perfiles pueden pedir ayuda con el SOS y cambiar de rol en cualquier momento.
+ */
 export function RoleSelectionScreen() {
   const { state, dispatch } = useDemo();
+  const current = activeProfile(state);
 
   return (
     <Screen className="min-h-full flex flex-col">
-      <Logo />
-      <div className="mt-8">
-        <p className="text-[9px] font-extrabold tracking-[1.5px] text-brand">BOTÓN VIOLETA</p>
+      <div className="flex items-center justify-between gap-3">
+        <Logo />
+        <Badge color="gray">DEMO · {state.profiles.length} PERFILES</Badge>
+      </div>
+
+      <div className="mt-6">
+        <p className="text-[9px] font-extrabold tracking-[1.5px] text-brand">ELEGÍ UN DISPOSITIVO</p>
         <h1 className="mt-2 text-[26px] leading-tight tracking-[-0.8px]">
           ¿Cómo querés <span className="text-brand">participar?</span>
         </h1>
         <p className="mt-2 text-[11px] leading-relaxed text-muted">
-          Elegí un perfil para empezar. Podés cambiarlo cuando quieras; desde cualquiera podés pedir
-          ayuda con SOS.
+          Cada perfil simula un dispositivo vinculado a la misma red. Desde cualquiera podés pedir
+          ayuda y cambiar de perspectiva cuando quieras.
         </p>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3">
-        {roles.map((item) => (
-          <button
-            key={item.role}
-            type="button"
-            onClick={() => dispatch({ type: 'setRole', role: item.role })}
-            className={`flex w-full items-center gap-3 rounded-[18px] border p-4 text-left transition hover:border-brand hover:shadow-sm ${
-              state.role === item.role ? 'border-brand bg-brand-soft/40' : 'border-line bg-paper'
-            }`}
-          >
-            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${item.color}`}>
-              <Icon name={item.icon} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <strong className="block text-[12px]">{item.title}</strong>
-              <small className="mt-1 block text-[9px] leading-relaxed text-muted">{item.subtitle}</small>
-            </span>
-            <Icon name="chev" size="sm" className="text-muted" />
-          </button>
-        ))}
-      </div>
+      {groups.map((group) => {
+        const list = state.profiles.filter((p) => p.role === group.role);
+        if (!list.length) return null;
+        return (
+          <section key={group.role} className="mt-5">
+            <h3 className="mb-2 flex items-center gap-[6px] text-[11px]">
+              <Icon name={group.icon} size="sm" className="text-brand" />
+              {group.title}
+              <span className="ml-auto text-[9px] font-normal text-muted">{list.length}</span>
+            </h3>
+            <div className="flex flex-col gap-2">
+              {list.map((p) => {
+                const selected = p.id === current?.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => dispatch({ type: 'selectProfile', id: p.id })}
+                    className={`flex w-full items-center gap-[10px] rounded-[16px] border p-[11px] text-left transition ${
+                      selected ? 'border-brand bg-brand-soft/40' : 'border-line bg-paper hover:border-brand/50'
+                    }`}
+                  >
+                    <Avatar name={p.name} color={p.color} />
+                    <span className="min-w-0 flex-1">
+                      <strong className="block text-[11px]">{p.name}</strong>
+                      <small className="block text-[9px] text-muted">
+                        {p.relation} · {p.city}
+                      </small>
+                      <small className="mt-[3px] block text-[8px] leading-snug text-muted/80">
+                        {p.note}
+                      </small>
+                    </span>
+                    {selected ? (
+                      <Badge color="green">ACTIVO</Badge>
+                    ) : (
+                      <Icon name="chev" size="sm" className="text-muted" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
 
-      <p className="mt-auto pt-6 text-center text-[9px] leading-relaxed text-muted">
-        Los perfiles son perspectivas distintas de la misma red. Cambiar de perfil no activa ni
-        comparte tu ubicación.
+      <Button
+        variant="outline"
+        block
+        icon="shield"
+        className="mt-5"
+        onClick={() => navigateTo(REGISTRY_PATH)}
+      >
+        Registro de vigilantes comunitarios
+      </Button>
+
+      <p className="mt-auto pt-5 text-center text-[9px] leading-relaxed text-muted">
+        Cambiar de perfil no activa ni comparte tu ubicación. Los avisos que recibe cada dispositivo
+        dependen de los vínculos y de la visibilidad que elija la persona al pedir ayuda.
       </p>
     </Screen>
   );

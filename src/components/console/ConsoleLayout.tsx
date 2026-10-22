@@ -10,6 +10,7 @@ const titles: Record<string, string> = {
   incidents: 'Incidentes',
   reports: 'Reportes',
   people: 'Personas',
+  guardians: 'Vigilantes comunitarios',
   resources: 'Recursos',
   audit: 'Bitácora',
   config: 'Configuración',

@@ -2,7 +2,7 @@ import { useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from '
 import { cn } from '@/lib/cn';
 import { xy } from '@/lib/geo';
 import { useDemo } from '@/providers/DemoStateProvider';
-import { followHasPosition } from '@/providers/demoSelectors';
+import { followHasPosition, watchedAlert } from '@/providers/demoSelectors';
 import { buildMarkers, markerColors } from '@/components/map/mapMarkers';
 import { StreetPlan } from '@/components/map/StreetPlan';
 import { LeafletLayer } from '@/components/map/LeafletLayer';
@@ -48,6 +48,8 @@ export function VectorMap({
 
   const tr = state.mapTransforms[ctx] ?? { x: 0, y: 0, z: 1 };
   const markers = buildMarkers(state, ctx);
+  const followAlert = ctx === 'follow' ? watchedAlert(state) : null;
+  const alertPill = !!followAlert;
   const showTrail =
     ['active', 'share', 'follow'].includes(ctx) &&
     state.trail.length >= 1 &&
@@ -106,7 +108,8 @@ export function VectorMap({
   return (
     <div
       className={cn(
-        'relative overflow-hidden isolate border border-[#e5dced] bg-[#eeebf2]',
+        'relative overflow-hidden isolate bg-[#eeebf2]',
+        alertPill ? 'border-2 border-[#d52f55]' : 'border border-[#e5dced]',
         variantClass[variant],
         className,
       )}
@@ -175,9 +178,22 @@ export function VectorMap({
       {state.mapReal && <LeafletLayer ctx={ctx} markers={markers} trail={showTrail ? state.trail : null} />}
 
       <div className="absolute left-3 right-3 top-3 z-[450] flex items-start justify-between gap-2 pointer-events-none [&>*]:pointer-events-auto">
-        <span className="flex items-center gap-[5px] px-[9px] py-[7px] rounded-[10px] bg-[#ffffffed] border border-white/85 backdrop-blur-[8px] text-[#927ca2] text-[8px] font-[750] shadow-[0_4px_10px_#42295008]">
-          <Icon name={state.online ? 'pin' : 'offline'} size="sm" className="w-3 h-3" />
-          {ctx === 'active' ? 'GPS SIMULADO' : ctx === 'follow' ? 'PERMISO ACTIVO' : 'MINAS · DEMO'}
+        <span
+          className={cn(
+            'flex items-center gap-[5px] px-[9px] py-[7px] rounded-[10px] text-[8px] font-[750] shadow-[0_4px_10px_#42295008]',
+            alertPill
+              ? 'bg-[#d52f55] border border-[#b71339] text-white'
+              : 'bg-[#ffffffed] border border-white/85 backdrop-blur-[8px] text-[#927ca2]',
+          )}
+        >
+          <Icon name={alertPill ? 'bell' : state.online ? 'pin' : 'offline'} size="sm" className="w-3 h-3" />
+          {alertPill
+            ? 'ALERTA ACTIVA'
+            : ctx === 'active'
+              ? 'GPS SIMULADO'
+              : ctx === 'follow'
+                ? 'PERMISO ACTIVO'
+                : 'MINAS · DEMO'}
         </span>
         <button
           type="button"

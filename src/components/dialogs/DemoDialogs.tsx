@@ -1,5 +1,8 @@
 import { useDemo } from '@/providers/DemoStateProvider';
+import { liveAlert, received } from '@/providers/demoSelectors';
 import { Sheet } from '@/components/common/Sheet';
+import { Avatar } from '@/components/common/Avatar';
+import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { Icon } from '@/components/common/Icon';
 import { LogoMark } from '@/components/common/Logo';
@@ -18,6 +21,7 @@ const galleryScreens: Array<{ screen: ScreenName; icon: string; label: string }>
   { screen: 'home', icon: 'home', label: 'Inicio' },
   { screen: 'onboarding', icon: 'heart', label: 'Introducción' },
   { screen: 'roles', icon: 'users', label: 'Elegir perfil' },
+  { screen: 'lockscreen', icon: 'lock', label: 'Pantalla bloqueada' },
   { screen: 'login', icon: 'user', label: 'Inicio de sesión' },
   { screen: 'register', icon: 'plus', label: 'Registro' },
   { screen: 'near', icon: 'map', label: 'Mapa cercano' },
@@ -80,6 +84,50 @@ export function DemoToolsDialog() {
           </button>
         ))}
       </div>
+
+      <div className="mt-4">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <strong className="text-[11px]">Dispositivos vinculados</strong>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'go', screen: 'roles' })}
+            className="text-[9px] font-bold text-brand"
+          >
+            Ver todos
+          </button>
+        </div>
+        <div className="flex flex-col gap-[6px]">
+          {state.profiles.map((p) => {
+            const alert = liveAlert(state);
+            const sees =
+              p.role === 'guardian'
+                ? !!(alert?.family && received(alert) && alert.recipients?.includes(p.id))
+                : p.role === 'community'
+                  ? !!(alert?.public && received(alert) && p.authorized)
+                  : false;
+            return (
+              <div
+                key={p.id}
+                className="flex items-center gap-2 rounded-[10px] border border-line bg-paper px-2 py-[7px]"
+              >
+                <Avatar name={p.name} color={p.color} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <strong className="block truncate text-[9px]">{p.name}</strong>
+                  <small className="block truncate text-[8px] text-muted">{p.label}</small>
+                </div>
+                <Badge color={sees ? 'green' : 'gray'}>
+                  {sees ? 'VE EL SOS' : p.role === 'self' ? 'SU ALERTA' : 'SIN AVISO'}
+                </Badge>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-[8px] leading-relaxed text-muted">
+          La visibilidad depende de la configuración de quien pide ayuda y del vínculo de cada
+          dispositivo. Cambiá de perfil para comprobarlo.
+        </p>
+      </div>
+
       <div className="h-px bg-line my-[19px]" />
       <div className="px-4 border border-line rounded-[19px] bg-paper">
         <div className="flex items-center gap-[11px] py-[15px] border-b border-line">

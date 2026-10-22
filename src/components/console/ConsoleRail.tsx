@@ -4,11 +4,12 @@ import { received } from '@/providers/demoSelectors';
 import { Avatar } from '@/components/common/Avatar';
 import { Icon } from '@/components/common/Icon';
 
-const navItems: Array<{ tab: 'overview' | 'incidents' | 'reports' | 'people' | 'resources' | 'audit' | 'config'; icon: string; label: string }> = [
+const navItems: Array<{ tab: 'overview' | 'incidents' | 'reports' | 'people' | 'guardians' | 'resources' | 'audit' | 'config'; icon: string; label: string }> = [
   { tab: 'overview', icon: 'layout', label: 'Centro de control' },
   { tab: 'incidents', icon: 'radar', label: 'Incidentes' },
   { tab: 'reports', icon: 'file', label: 'Reportes' },
   { tab: 'people', icon: 'users', label: 'Personas' },
+  { tab: 'guardians', icon: 'shield', label: 'Vigilantes' },
   { tab: 'resources', icon: 'car', label: 'Recursos' },
   { tab: 'audit', icon: 'activity', label: 'Bitácora' },
   { tab: 'config', icon: 'settings', label: 'Configuración' },

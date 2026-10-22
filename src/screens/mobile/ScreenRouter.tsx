@@ -32,6 +32,7 @@ import { CallScreen } from '@/screens/mobile/CallScreen';
 import { HelpScreen } from '@/screens/mobile/HelpScreen';
 import { PlacesScreen } from '@/screens/mobile/PlacesScreen';
 import { RoleSelectionScreen } from '@/screens/mobile/RoleSelectionScreen';
+import { LockScreen } from '@/screens/mobile/LockScreen';
 
 const screens: Record<ScreenName, ComponentType> = {
   home: HomeScreen,
@@ -59,6 +60,7 @@ const screens: Record<ScreenName, ComponentType> = {
   chat: ChatScreen,
   onboarding: OnboardingScreen,
   roles: RoleSelectionScreen,
+  lockscreen: LockScreen,
   login: LoginScreen,
   register: RegisterScreen,
   call: CallScreen,

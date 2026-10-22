@@ -1,5 +1,5 @@
 import { useDemo } from '@/providers/DemoStateProvider';
-import { alertContacts, liveAlert } from '@/providers/demoSelectors';
+import { alertContacts, ownAlert } from '@/providers/demoSelectors';
 import { Icon } from '@/components/common/Icon';
 
 /**
@@ -8,7 +8,7 @@ import { Icon } from '@/components/common/Icon';
  */
 export function SosCard() {
   const { state, dispatch } = useDemo();
-  const alert = liveAlert(state);
+  const alert = ownAlert(state);
 
   return (
     <section className="relative overflow-hidden text-center mt-[21px] px-4 pt-[17px] pb-4 rounded-[25px] border border-[#e3d6f3] dark:border-[#674481] sos-card-gradient">

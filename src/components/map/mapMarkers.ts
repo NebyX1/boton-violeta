@@ -1,9 +1,10 @@
 import {
   followHasPosition,
-  liveAlert,
   nearAlerts,
   nearbyFeed,
+  ownAlert,
   received,
+  watchedAlert,
 } from '@/providers/demoSelectors';
 import { places } from '@/services/demoData';
 import type { DemoState, LatLng } from '@/types/demo';
@@ -60,16 +61,18 @@ export function buildMarkers(s: DemoState, ctx: string): MapMarker[] {
 
   if (['home', 'active', 'share', 'follow'].includes(ctx)) {
     let ok = ctx !== 'follow' || followHasPosition(s);
-    const a = liveAlert(s);
+    const a = ownAlert(s);
     if (ctx === 'active' && !a?.pos) ok = false;
+    const followAlert = ctx === 'follow' ? watchedAlert(s) : null;
     if (ok) {
       out.push({
         id: 'self',
-        pos: s.position,
+        pos: followAlert?.pos ?? s.position,
         label: 'C',
-        color: 'purple',
+        color: followAlert ? 'red' : 'purple',
+        urgent: !!followAlert,
         track: true,
-        name: s.profile.name,
+        name: followAlert?.name ?? s.profile.name,
       });
     }
   }

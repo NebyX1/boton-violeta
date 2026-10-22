@@ -1,5 +1,5 @@
 import { useDemo } from '@/providers/DemoStateProvider';
-import { helperName, received } from '@/providers/demoSelectors';
+import { helperName, ownAlert, received } from '@/providers/demoSelectors';
 import { incidentStatusLabel } from '@/services/demoData';
 import { Screen } from '@/components/layout/PhoneFrame';
 import { PageTop } from '@/components/layout/PageTop';
@@ -90,7 +90,7 @@ export function IncidentScreen() {
         Llamar al 911
       </a>
 
-      {a.owner === 'self' && a.id === state.alertId ? (
+      {a.id === ownAlert(state)?.id ? (
         <Button block className="mt-5" onClick={() => dispatch({ type: 'go', screen: 'sos' })}>
           Ver mi SOS
         </Button>
